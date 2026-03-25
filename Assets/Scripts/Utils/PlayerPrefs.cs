@@ -1,0 +1,4 @@
+public enum PlayerPrefsKey
+{
+    PlayerName
+}

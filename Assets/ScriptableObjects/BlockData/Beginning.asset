@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: deccb79e070088648bfbf1c816b8d20a, type: 3}
+  m_Name: Beginning
+  m_EditorClassIdentifier: 
+  id: Begin
+  blockType: 0
+  vehicles:
+  - type: 6
+    vehicle: {fileID: 0}
+    startPosition: {x: 5.25, y: 0, z: 60}
+    endPosition: {x: 0, y: 0, z: 0}
+    moveSpeed: 0
+  - type: 11
+    vehicle: {fileID: 0}
+    startPosition: {x: -5.25, y: 0, z: 90}
+    endPosition: {x: 0, y: 0, z: 0}
+    moveSpeed: 0
+  obstacles:
+  - type: 1
+    obstacle: {fileID: 0}
+    position: {x: -1.75, y: 0.4, z: 75}
+  - type: 3
+    obstacle: {fileID: 0}
+    position: {x: 1.75, y: 0.35, z: 63}
+  platforms: []
+  ramps: []
+  powerUps:
+  - type: 0
+    powerUp: {fileID: 0}
+    position: {x: -5.25, y: 1, z: 50}
+  - type: 1
+    powerUp: {fileID: 0}
+    position: {x: -1.75, y: 1, z: 50}
+  - type: 0
+    powerUp: {fileID: 0}
+    position: {x: 1.75, y: 1, z: 50}
+  - type: 1
+    powerUp: {fileID: 0}
+    position: {x: 5.25, y: 1, z: 50}
+  checkpoints: []

@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34adc34926442cf499e89bda8ab44bc1, type: 3}
+  m_Name: Prefabs
+  m_EditorClassIdentifier: 
+  roads:
+  - {fileID: 3576092684356234492, guid: 3da0dbce74995774e92905a0f26fb964, type: 3}
+  props:
+  - {fileID: 5376457930966045369, guid: 84c96e494f36c0f4a8d2f245cddb764a, type: 3}
+  - {fileID: 7589429839634268382, guid: b2cf217360b8cf7448962d9bbfc77aab, type: 3}
+  environments:
+  - {fileID: 849164847002279502, guid: e24fdd3a769e9ad4a9427e4dd3d16df5, type: 3}
+  - {fileID: 9133384523346524910, guid: 8219063d0f9514844812c5fbf28271b8, type: 3}
+  - {fileID: 4130699407065126584, guid: 6c284615c5d7c444ea81c3052910a672, type: 3}
+  vehicles:
+  - {fileID: 2650539281265296174, guid: b77bfafc9a56dc04b9a0d8f6b27f0b8b, type: 3}
+  - {fileID: 3772971433533664141, guid: c4f6bc7c702168747a873f59397c9d37, type: 3}
+  - {fileID: 7508809543921080847, guid: 9e8399fb2e3c49a41868438d7a852f77, type: 3}
+  - {fileID: 5134616663335759023, guid: ddca8f23fb3253a47a9eeb5817987794, type: 3}
+  - {fileID: 37194635972627894, guid: 14d32e7bb611a5e4a812b9e061afcd22, type: 3}
+  - {fileID: 5531858300989946136, guid: 5126c025b3e380147988a5778b3f3b84, type: 3}
+  - {fileID: 7245139930611658011, guid: e974ce5220954b5449f912c606fddf7f, type: 3}
+  - {fileID: 6890988820203913188, guid: de0ffc8300d5a5942b1c27434b7c438c, type: 3}
+  - {fileID: 8069612105742237974, guid: 5bc152ef011bacc45ad1f5d468f877ac, type: 3}
+  - {fileID: 2032765936163681365, guid: ecc00a64a460aa74b862c92d088a55b2, type: 3}
+  - {fileID: 5614813229317028604, guid: 3fd176fd9a5853f4ba94f8c20d8ce2ce, type: 3}
+  - {fileID: 6863514839235363102, guid: d1142a7328297a94fba6480cf8c24f5c, type: 3}
+  - {fileID: 5879547163381642256, guid: 7eb53bc9cb002914d8ead8177f02133c, type: 3}
+  - {fileID: 7937061345705209569, guid: f4d2a049354c8cc4da2574773105d3b1, type: 3}
+  - {fileID: 4260439570547006812, guid: 82c6c05609f59ac4cabf825d9402a8d0, type: 3}
+  - {fileID: 3585171031549892204, guid: 8bb160e2f4a4e474b8eef3644a109ab3, type: 3}
+  obstacles:
+  - {fileID: 8608189878535448892, guid: c40a93c093c778a4a99a8120fde37a7d, type: 3}
+  - {fileID: 2122896763803429289, guid: 2f8cfd04d0914c04c8531f36499c6990, type: 3}
+  - {fileID: 8731429160436705809, guid: e382df7703c4230478546cf2a5aa9940, type: 3}
+  - {fileID: 2067689329461669049, guid: d51278edd5c431044b6ae207b104fa1a, type: 3}
+  platforms:
+  - {fileID: 6189067251353916754, guid: 10e28af6be6edba439c89686c5aaf324, type: 3}
+  - {fileID: 6264607634562949054, guid: 4b4c64e4e65d09642b8459c0a129282f, type: 3}
+  - {fileID: 9095388354360761778, guid: c40399b32c6ef5244b65c2fd5958c721, type: 3}
+  ramps:
+  - {fileID: 3006192034017751650, guid: f79573de654da454e8cbf58995174875, type: 3}
+  - {fileID: 2069498128704270450, guid: 07a70efde9410f8448ecf725621a3ff9, type: 3}
+  powerUps:
+  - {fileID: 1249057239489524, guid: 235c4fa00047fd446b83d15bd83ab447, type: 3}
+  - {fileID: 1927097899853378, guid: 695e42a83577c584cb00a8f91428173a, type: 3}
+  checkpoints:
+  - {fileID: 4262691762608187221, guid: f8661d7c16c63cb4e8403d136c47ea35, type: 3}
+  - {fileID: 8366825705606442178, guid: cf2882985038bc547834fb6b5f36c2cc, type: 3}

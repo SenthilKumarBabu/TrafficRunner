@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0f991ce12c325d4b9aea932d5b6d68b, type: 3}
+  m_Name: CountryData
+  m_EditorClassIdentifier: 
+  difficultyList:
+  - {fileID: 11400000, guid: bf0bce2045696d440a93b66f41eedafc, type: 2}
+  - {fileID: 11400000, guid: fa4134bf5dc99da43a18b4707ec282a5, type: 2}
+  - {fileID: 11400000, guid: 25c287f9fab6fc5459351868f9def593, type: 2}
+  themeList:
+  - {fileID: 11400000, guid: 39960c48e67f92c498c2bd42313cf0c6, type: 2}
+  - {fileID: 11400000, guid: c697fd2752a472345832784e0cfc4c72, type: 2}
+  initialBlockList:
+  - {fileID: 11400000, guid: 11bea0840f81c4249846e98595345254, type: 2}
+  middleBlockList:
+  - {fileID: 11400000, guid: fec4cc8758c7c224d9268b1cb86bc498, type: 2}
+  finalBlockList:
+  - {fileID: 11400000, guid: 7f4b056feaf3db348b52ae5d07903672, type: 2}
