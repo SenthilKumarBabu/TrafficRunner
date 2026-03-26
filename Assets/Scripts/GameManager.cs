@@ -35,15 +35,27 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
+        DontDestroyOnLoad(gameObject);
+    }
+
+    private void Start()
+    {
+        SubscribeToNetworkEvents();
+    }
+
+    private void SubscribeToNetworkEvents()
+    {
         _networkData = ReferenceManager.Get<NetworkData>();
         _networkEvents = ReferenceManager.Get<NetworkEvents>();
         _networkRpc = ReferenceManager.Get<NetworkRpc>();
+
+        if (_networkEvents == null) return;
 
         _networkEvents.OnRaceStarted += delegate(object sender, EventArgs args)
         {
             SetRaceStartDateTime(DateTime.Now);
         };
-        
+
         _networkEvents.LocalPlayerCompleteRace += delegate
         {
             SetRaceEndDateTime(DateTime.Now);

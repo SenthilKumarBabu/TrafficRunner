@@ -1,25 +1,24 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using PlatformCharacterController;
 using UnityEngine;
 
 public class CameraManager : MonoBehaviour
 {
-    [SerializeField] private Camera lobbyCamera, gameCamera;
+    [SerializeField] private Camera gameCamera;
 
-    private LobbyManager lobbyManager;
     private NetworkEvents _networkEvents;
-    
+
     private void Awake()
     {
-        lobbyManager = ReferenceManager.Get<LobbyManager>();
         _networkEvents = ReferenceManager.Get<NetworkEvents>();
-        
-        _networkEvents.OnGameStarted += delegate 
+
+        _networkEvents.OnGameStarted += async delegate
         {
-            lobbyCamera.gameObject.SetActive(false);
             gameCamera.gameObject.SetActive(true);
+            await UniTask.WaitUntil(() => (UnityEngine.Object)PlayerManager.LocalPlayerInstance != null);
             gameCamera.GetComponent<TopDownCamera>().Target = PlayerManager.LocalPlayerInstance.transform;
         };
     }

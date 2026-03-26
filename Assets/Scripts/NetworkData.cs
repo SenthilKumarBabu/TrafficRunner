@@ -10,9 +10,10 @@ using UnityEngine.Serialization;
 
 public class NetworkData : NetworkBehaviour
 {
-    
+    [SerializeField] private NetworkObject playerPrefab;
+
     public NetworkList<PlayerData> playersDataList;
-    
+
     private NetworkEvents _networkEvents;
     private GameManager _gameManager;
     private NetworkRpc _networkRpc;
@@ -30,26 +31,51 @@ public class NetworkData : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        Debug.Log($"[NetworkData] OnNetworkSpawn — IsServer={IsServer}, instanceId={GetInstanceID()}");
+
         if (IsServer)
         {
-            var playerData = new PlayerData
+            // Spawn player objects and add all currently connected clients
+            foreach (var clientId in NetworkManager.Singleton.ConnectedClientsIds)
             {
-                id = NetworkManager.Singleton.LocalClientId,
-                isConnected = false,
-                isReadyForGame = false,
-                raceCompleteTime = "",
-            };
-            playersDataList.Add(playerData);
+                Debug.Log($"[NetworkData] OnNetworkSpawn (Server): spawning player and adding client {clientId} as connected");
+
+                if (playerPrefab != null)
+                {
+                    var playerObj = Instantiate(playerPrefab);
+                    playerObj.SpawnAsPlayerObject(clientId, false);
+                }
+                else
+                {
+                    Debug.LogError("[NetworkData] playerPrefab is not assigned!");
+                }
+
+                playersDataList.Add(new PlayerData
+                {
+                    id = clientId,
+                    isConnected = true,
+                    isReadyForGame = false,
+                    raceCompleteTime = "",
+                });
+            }
             playersDataList.SetDirty(true);
-            
+
+            if (!isSceneSetupCompleted && CheckAllPlayersConnected())
+            {
+                isSceneSetupCompleted = true;
+                _networkEvents.SceneSetup();
+            }
+
+            // Handle clients that connect after this point
             NetworkManager.Singleton.OnClientConnectedCallback += delegate(ulong clientIndex)
             {
                 if (clientIndex != NetworkManager.Singleton.LocalClientId)
                 {
+                    Debug.Log($"[NetworkData] Client {clientIndex} connected late, adding to playersDataList");
                     _networkRpc.SetPlayerDataServerRpc(new PlayerData()
                     {
                         id = clientIndex,
-                        isConnected = false,
+                        isConnected = true,
                         isReadyForGame = false,
                         raceCompleteTime = ""
                     });
@@ -77,6 +103,7 @@ public class NetworkData : NetworkBehaviour
 
     public void SetPlayerData(PlayerData playerData)
     {
+        Debug.Log($"[NetworkData] SetPlayerData: id={playerData.id} isConnected={playerData.isConnected} isReady={playerData.isReadyForGame}");
         for (int i = 0; i < playersDataList.Count; i++)
         {
             if (playersDataList[i].id == playerData.id)
@@ -85,13 +112,18 @@ public class NetworkData : NetworkBehaviour
 
                 if (!isSceneSetupCompleted && CheckAllPlayersConnected())
                 {
-                    isSceneSetupCompleted = true;   
+                    isSceneSetupCompleted = true;
                     _networkEvents.SceneSetup();
+                }
+                else if (!isSceneSetupCompleted)
+                {
+                    Debug.Log($"[NetworkData] Not all players connected yet — list count={playersDataList.Count}, required={_gameManager.TotalNumberOfPlayers}");
                 }
 
                 return;
             }
         }
+        Debug.Log($"[NetworkData] SetPlayerData: id={playerData.id} not found, adding new entry");
         playersDataList.Add(playerData);
     }
 

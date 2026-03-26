@@ -1,10 +1,8 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 #if UNITY_EDITOR
-using ParrelSync;
+
 #endif
 using TMPro;
 using Unity.Netcode;
@@ -25,13 +23,13 @@ public class MenuPage : MonoBehaviour
     private LobbyManager lobbyManager;
     private GameManager _gameManager;
     private UnityTransport _unityTransport;
-    
+
     private void Awake()
     {
         lobbyManager = ReferenceManager.Get<LobbyManager>();
         _gameManager = ReferenceManager.Get<GameManager>();
         _unityTransport = ReferenceManager.Get<UnityTransport>();
-        
+
         userNameIf.onEndEdit.AddListener(UserNameInputFieldEndEdit);
     }
 
@@ -53,48 +51,39 @@ public class MenuPage : MonoBehaviour
 
     public async void PlayButtonClicked()
     {
+        Debug.Log("[MenuPage] PlayButtonClicked");
         if (_unityTransport.Protocol == UnityTransport.ProtocolType.UnityTransport)
         {
-#if UNITY_EDITOR
             InitializationOptions initializationOptions = new InitializationOptions();
             initializationOptions.SetEnvironmentName("production");
 
             await UnityServices.InitializeAsync(initializationOptions);
-        
+
             Debug.Log("Initialization success");
-        
+
             AnalyticsService.Instance.StartDataCollection();
 
             await AuthenticationService.Instance.SignInAnonymouslyAsync();
-        
+
             Debug.Log(AnalyticsService.Instance.GetAnalyticsUserID());
             UnityServices.ExternalUserId = AnalyticsService.Instance.GetAnalyticsUserID();
-            
-            if (_gameManager.isCloneClient)
-            {
-                if (!ClonesManager.IsClone())
-                    NetworkManager.Singleton.StartHost();
-                else
-                {
-                    NetworkManager.Singleton.StartClient();
-                }
-            }
-            else
-            {
-                if (!ClonesManager.IsClone())
-                    NetworkManager.Singleton.StartClient();
-                else
-                {
-                    NetworkManager.Singleton.StartHost();
-                }
-            }
+
+#if UNITY_EDITOR
+            bool isClient = System.Array.Exists(Unity.Multiplayer.PlayMode.CurrentPlayer.ReadOnlyTags(), t => t == "Player2");
+#else
+            bool isClient = Array.Exists(Environment.GetCommandLineArgs(), arg => arg == "-isClient");
 #endif
+            Debug.Log($"[MenuPage] PlayButtonClicked isClient={isClient}");
+            if (isClient)
+                NetworkManager.Singleton.StartClient();
+            else
+                NetworkManager.Singleton.StartHost();
         }
         else
         {
             lobbyManager.Authenticate();
         }
-        
+
         Hide();
     }
 

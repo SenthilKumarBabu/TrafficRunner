@@ -75,11 +75,10 @@ public class LobbyManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
-        
+        DontDestroyOnLoad(gameObject);
+
         gameManager = ReferenceManager.Get<GameManager>();
-        _networkEvents = ReferenceManager.Get<NetworkEvents>();
-        _networkRpc = ReferenceManager.Get<NetworkRpc>();
-        
+
         UpdatePlayerName($"User{UnityEngine.Random.Range(0, 1000)}");
 
         OnJoinedLobby += delegate { PrintLobby(); };
@@ -408,7 +407,7 @@ public class LobbyManager : MonoBehaviour
             relayJoinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
             Debug.Log(relayJoinCode);
 
-            RelayServerData relayServerData = new RelayServerData(allocation, "dtls");
+            RelayServerData relayServerData = allocation.ToRelayServerData("dtls");
 
             NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(relayServerData);
 
@@ -444,7 +443,7 @@ public class LobbyManager : MonoBehaviour
         {
             JoinAllocation joinAllocation = await RelayService.Instance.JoinAllocationAsync(joinCode);
 
-            RelayServerData relayServerData = new RelayServerData(joinAllocation, "dtls");
+            RelayServerData relayServerData = joinAllocation.ToRelayServerData("dtls");
 
             NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(relayServerData);
 
@@ -555,7 +554,7 @@ public class LobbyManager : MonoBehaviour
         {
             Debug.Log("UpdateLobbyGameMode " + gameMode);
 
-            Lobby lobby = await Lobbies.Instance.UpdateLobbyAsync(joinedLobby.Id, new UpdateLobbyOptions
+            Lobby lobby = await LobbyService.Instance.UpdateLobbyAsync(joinedLobby.Id, new UpdateLobbyOptions
             {
                 Data = new Dictionary<string, DataObject>
                 {
@@ -597,7 +596,7 @@ public class LobbyManager : MonoBehaviour
                     field: QueryOrder.FieldOptions.Created)
             };
 
-            QueryResponse lobbyListQueryResponse = await Lobbies.Instance.QueryLobbiesAsync();
+            QueryResponse lobbyListQueryResponse = await LobbyService.Instance.QueryLobbiesAsync();
 
             OnLobbyListChanged?.Invoke(this,
                 new OnLobbyListChangedEventArgs { lobbyList = lobbyListQueryResponse.Results });
@@ -619,7 +618,7 @@ public class LobbyManager : MonoBehaviour
             {
                 string relayCode = await CreateRelay();
 
-                Lobby lobby = await Lobbies.Instance.UpdateLobbyAsync(joinedLobby.Id, new UpdateLobbyOptions
+                Lobby lobby = await LobbyService.Instance.UpdateLobbyAsync(joinedLobby.Id, new UpdateLobbyOptions
                 {
                     Data = new Dictionary<string, DataObject>
                     {
@@ -628,6 +627,8 @@ public class LobbyManager : MonoBehaviour
                 });
 
                 joinedLobby = lobby;
+
+                NetworkManager.Singleton.SceneManager.LoadScene("Game", UnityEngine.SceneManagement.LoadSceneMode.Single);
             }
             catch (Exception e)
             {

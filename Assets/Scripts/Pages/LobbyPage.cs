@@ -17,35 +17,32 @@ public class LobbyPage : MonoBehaviour
 
    [SerializeField] private Button startGameButton;
 
-   private PlayerManager playerManager;
    private LobbyManager lobbyManager;
-   private NetworkEvents networkEvents;
-   private GameManager _gameManager;
-   private NetworkRpc _networkRpc;
    private UnityTransport _unityTransport;
 
    private void Awake()
    {
-      playerManager = ReferenceManager.Get<PlayerManager>();
       lobbyManager = ReferenceManager.Get<LobbyManager>();
-      networkEvents = ReferenceManager.Get<NetworkEvents>();
-      _gameManager = ReferenceManager.Get<GameManager>();
-      _networkRpc = ReferenceManager.Get<NetworkRpc>();
       _unityTransport = ReferenceManager.Get<UnityTransport>();
-      
+
       startGameButton.onClick.AddListener(StartGame);
-      
+
       lobbyManager.OnJoinedLobby += delegate
       {
          Show();
       };
 
-      networkEvents.OnGameStarted += delegate
-      {
-         Hide();
-      };
-         
       gameDifficultyDropdown.onValueChanged.AddListener(GameDifficultyDropdownValueChanged);
+   }
+
+   private void Start()
+   {
+      if (NetworkManager.Singleton == null) return;
+      NetworkManager.Singleton.OnClientConnectedCallback += delegate(ulong clientId)
+      {
+         if (_unityTransport.Protocol == UnityTransport.ProtocolType.UnityTransport)
+            Show();
+      };
    }
 
    private void GameDifficultyDropdownValueChanged(Int32 value)
@@ -60,10 +57,16 @@ public class LobbyPage : MonoBehaviour
 
    private void StartGame()
    {
+      Debug.Log("[LobbyPage] StartGame clicked");
       if (_unityTransport.Protocol == UnityTransport.ProtocolType.RelayUnityTransport)
       {
          startGameButton.gameObject.SetActive(false);
          lobbyManager.InitializeGameStart();
+      }
+      else
+      {
+         startGameButton.gameObject.SetActive(false);
+         NetworkManager.Singleton.SceneManager.LoadScene("Game", UnityEngine.SceneManagement.LoadSceneMode.Single);
       }
    }
 
@@ -72,8 +75,9 @@ public class LobbyPage : MonoBehaviour
       holder.SetActive(true);
       if (_unityTransport.Protocol == UnityTransport.ProtocolType.UnityTransport)
       {
-         startGameButton.gameObject.SetActive(_networkRpc.IsHost);
-         gameDifficultyDropdown.interactable = _networkRpc.IsHost;
+         bool isHost = NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost;
+         startGameButton.gameObject.SetActive(isHost);
+         gameDifficultyDropdown.interactable = isHost;
       }
       else
       {

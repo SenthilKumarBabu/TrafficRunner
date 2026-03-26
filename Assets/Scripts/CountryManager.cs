@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using PlatformCharacterController;
 using Unity.Netcode;
 using UnityEngine;
@@ -17,7 +18,6 @@ public class CountryManager : NetworkBehaviour
     [Header("Sector")] 
     [SerializeField] private List<Sector> usedSectorList;
 
-    private LobbyManager lobbyManager;
     private GameManager gameManager;
     private NetworkEvents _networkEvents;
     private NetworkData _networkData;
@@ -26,7 +26,6 @@ public class CountryManager : NetworkBehaviour
     private void Awake()
     {
         gameManager = ReferenceManager.Get<GameManager>();
-        lobbyManager = ReferenceManager.Get<LobbyManager>();
         _networkEvents = ReferenceManager.Get<NetworkEvents>();
         _networkData = ReferenceManager.Get<NetworkData>();
         _networkRpc = ReferenceManager.Get<NetworkRpc>();
@@ -61,12 +60,23 @@ public class CountryManager : NetworkBehaviour
             numberOfBlocks.Value = -1;
             sectorIndex.Value = -1;
         }
+        else
+        {
+            WaitForNetworkRpcAndCheck().Forget();
+        }
+    }
+
+    private async UniTaskVoid WaitForNetworkRpcAndCheck()
+    {
+        await UniTask.WaitUntil(() => _networkRpc != null && _networkRpc.IsSpawned);
+        CheckCountryDataAndStartGame();
     }
 
     private void CheckCountryDataAndStartGame()
     {
         if (numberOfBlocks.Value != -1 && sectorIndex.Value != -1)
         {
+            if (_networkRpc == null || !_networkRpc.IsSpawned) return;
             _networkRpc.SetPlayerDataServerRpc(new PlayerData()
             {
                 id = NetworkManager.Singleton.LocalClientId,

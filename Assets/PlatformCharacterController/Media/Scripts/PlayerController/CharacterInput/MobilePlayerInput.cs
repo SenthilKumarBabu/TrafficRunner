@@ -21,13 +21,13 @@ namespace PlatformCharacterController
         }
 
         public override float GetHorizontal()
-        { 
-            return MobileJoystick.Horizontal;
+        {
+            return MobileJoystick != null ? MobileJoystick.Horizontal : 0f;
         }
 
         public override float GetVertical()
         {
-            return MobileJoystick.Vertical;
+            return MobileJoystick != null ? MobileJoystick.Vertical : 0f;
         }
 
         public override bool Jump()

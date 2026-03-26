@@ -22,14 +22,12 @@ public class NetworkEvents : NetworkBehaviour
     [SerializeField] private  bool inGameEventsLogs;
     
     private GameManager _gameManager;
-    private LobbyPage _lobbyPage;
     private NetworkRpc _networkRpc;
     private NetworkData _networkData;
-    
+
     private void Awake()
     {
         _gameManager = ReferenceManager.Get<GameManager>();
-        _lobbyPage = ReferenceManager.Get<LobbyPage>();
         _networkRpc = ReferenceManager.Get<NetworkRpc>();
         _networkData = ReferenceManager.Get<NetworkData>();
 
@@ -105,16 +103,9 @@ public class NetworkEvents : NetworkBehaviour
 
         if (IsHost)
         {
-            NetworkManager.Singleton.OnClientConnectedCallback += delegate(ulong clientIndex)
+            NetworkManager.Singleton.OnConnectionEvent += delegate(NetworkManager manager, ConnectionEventData data)
             {
-                if (NetworkManager.Singleton.ConnectedClientsList.Count >= _gameManager.TotalNumberOfPlayers)
-                {
-                    _lobbyPage.Show();
-                }
-            };
-            
-            NetworkManager.Singleton.OnConnectionEvent += delegate(NetworkManager manager, ConnectionEventData data) 
-            {
+                Debug.Log($"[NetworkEvents] OnConnectionEvent: client {data.ClientId} {data.EventType}");
                 _networkRpc.SetPlayerDataServerRpc(new PlayerData()
                 {
                     id = data.ClientId,
@@ -128,31 +119,36 @@ public class NetworkEvents : NetworkBehaviour
 
     public void SceneSetup()
     {
+        Debug.Log($"[NetworkEvents] SceneSetup called by client {NetworkManager.Singleton.LocalClientId}");
         OnSceneDataInitialized?.Invoke(this,EventArgs.Empty);
     }
-    
+
     public async void StartRace()
     {
-        Debug.Log("StartRace");
+        Debug.Log($"[NetworkEvents] StartRace called by client {NetworkManager.Singleton.LocalClientId}");
         OnGameStarted?.Invoke(this, EventArgs.Empty);
-                    
+
         await UniTask.Delay(TimeSpan.FromSeconds(_gameManager.GameStartCountDown));
-            
+
+        Debug.Log($"[NetworkEvents] OnRaceStarted firing for client {NetworkManager.Singleton.LocalClientId}");
         OnRaceStarted?.Invoke(this, EventArgs.Empty);
     }
-    
+
     public void OnPlayerNetworkObjectSpawned()
     {
+        Debug.Log($"[NetworkEvents] OnPlayerNetworkObjectSpawned for client {NetworkManager.Singleton.LocalClientId}");
         OnPlayerSpawned?.Invoke(this, EventArgs.Empty);
     }
-    
+
     public void OnLocalPlayerCompleteRace()
     {
+        Debug.Log($"[NetworkEvents] OnLocalPlayerCompleteRace for client {NetworkManager.Singleton.LocalClientId}");
         LocalPlayerCompleteRace?.Invoke(this, EventArgs.Empty);
     }
-    
+
     public void OnAllPlayersCompleteRace()
     {
+        Debug.Log($"[NetworkEvents] OnAllPlayersCompleteRace for client {NetworkManager.Singleton.LocalClientId}");
         AllPlayersCompleteRace?.Invoke(this, EventArgs.Empty);
     }
     

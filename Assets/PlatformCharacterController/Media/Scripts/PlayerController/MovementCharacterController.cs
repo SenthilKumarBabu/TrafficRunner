@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
+using TopDownShooter;
 using Unity.Mathematics;
 using Unity.Netcode;
 using UnityEngine;
@@ -200,52 +201,96 @@ namespace PlatformCharacterController
             
             _dashCooldown = DashCooldown;
             _gravity = Gravity;
-            
-            _cameraTransform = cameraManager.GetMainCamera().transform;
-            
+
             if (IsOwner)
             {
                 PlayerManager.LocalPlayerInstance = this;
-                
+                Debug.Log($"[MCC] OnNetworkSpawn — IsOwner=true, NetworkObjectId={NetworkObjectId}, activeScene={UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}");
+
                 _controller.enabled = false;
                 _characterTransform.position = new Vector3(0, 1, -100);
                 _characterTransform.eulerAngles = Vector3.zero;
+
+                // If already in Game scene (spawned after LoadEventCompleted), set up immediately
+                if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Game")
+                {
+                    Debug.Log("[MCC] Already in Game scene — calling SetupForGameScene directly");
+                    SetupForGameScene();
+                }
+                else
+                {
+                    Debug.Log("[MCC] Not in Game scene — waiting for LoadEventCompleted");
+                    NetworkManager.Singleton.SceneManager.OnSceneEvent += OnNGOSceneEvent;
+                }
+            }
+        }
+
+        private void OnNGOSceneEvent(SceneEvent sceneEvent)
+        {
+            Debug.Log($"[MCC] SceneEvent type={sceneEvent.SceneEventType} scene={sceneEvent.SceneName}");
+            if (sceneEvent.SceneEventType != SceneEventType.LoadEventCompleted) return;
+            if (sceneEvent.SceneName != "Game") return;
+            NetworkManager.Singleton.SceneManager.OnSceneEvent -= OnNGOSceneEvent;
+            Debug.Log("[MCC] LoadEventCompleted for Game — calling SetupForGameScene");
+            SetupForGameScene();
+        }
+
+        private void SetupForGameScene()
+        {
+            Debug.Log($"[MCC] SetupForGameScene called — NetworkObjectId={NetworkObjectId}");
+            networkEvents = ReferenceManager.Get<NetworkEvents>();
+            if (networkEvents == null)
+            {
+                Debug.LogError("[MCC] networkEvents still null after Game scene loaded");
+                return;
+            }
+
+            networkEvents.OnSceneDataInitialized += delegate { CanControl = false; };
+
+            networkEvents.OnGameStarted += delegate(object sender, EventArgs args)
+            {
+                if (!this) { Debug.LogWarning("[MCC] OnGameStarted fired on destroyed MCC — skipping"); return; }
+                Debug.Log($"[MCC] OnGameStarted — repositioning player (NetworkObjectId={NetworkObjectId})");
+                cameraManager = ReferenceManager.Get<CameraManager>();
+                _cameraTransform = cameraManager.GetMainCamera().transform;
+                PlayerInputs = gameManager.TestInMobile ? GetComponent<MobilePlayerInput>() : GetComponent<Inputs>();
+                if (PlayerInputs is MobilePlayerInput mpi)
+                    mpi.MobileJoystick = UnityEngine.Object.FindObjectOfType<Joystick>(true);
+
+                _controller.enabled = false;
+                _characterTransform.position = new Vector3(gameManager.PlayerLaneXPosition[Unity.Netcode.NetworkManager.Singleton.LocalClientId], 0, 10);
+                _characterTransform.eulerAngles = Vector3.zero;
                 _controller.enabled = true;
-                
-                networkEvents.OnSceneDataInitialized += delegate
-                {
-                    CanControl = false;
-                };
-                
-                networkEvents.OnGameStarted += delegate(object sender, EventArgs args)
-                {
-                    _controller.enabled = false;
-                    _characterTransform.position = new Vector3(gameManager.PlayerLaneXPosition[Unity.Netcode.NetworkManager.Singleton.LocalClientId], 0, 10);
-                    _characterTransform.eulerAngles = Vector3.zero;
-                    _controller.enabled = true;
-                };
-    
-                networkEvents.OnRaceStarted += delegate
-                {
-                    CanControl = true;
-                }; 
+                Debug.Log($"[MCC] Player repositioned to lane {Unity.Netcode.NetworkManager.Singleton.LocalClientId}, cameraTransform={_cameraTransform != null}");
+            };
 
-                networkEvents.LocalPlayerCompleteRace += delegate
-                {
-                    CanControl = false;
-                };
+            networkEvents.OnRaceStarted += delegate { if (!this) return; Debug.Log("[MCC] OnRaceStarted — CanControl=true"); CanControl = true; };
+            networkEvents.LocalPlayerCompleteRace += delegate { CanControl = false; };
 
-                networkEvents.OnPlayerNetworkObjectSpawned();
+            networkEvents.OnPlayerNetworkObjectSpawned();
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            Debug.Log($"[MCC] OnNetworkDespawn — IsOwner={IsOwner}, OwnerClientId={OwnerClientId}, NetworkObjectId={NetworkObjectId}", gameObject);
+            if (IsOwner)
+            {
+                Debug.LogWarning($"[MCC] LOCAL player despawned! NetworkObjectId={NetworkObjectId}\n{System.Environment.StackTrace}", gameObject);
+                // Unsubscribe to prevent stale delegates from firing after this object is destroyed
+                if (NetworkManager.Singleton != null && NetworkManager.Singleton.SceneManager != null)
+                    NetworkManager.Singleton.SceneManager.OnSceneEvent -= OnNGOSceneEvent;
+                if (PlayerManager.LocalPlayerInstance == this)
+                    PlayerManager.LocalPlayerInstance = null;
             }
         }
 
         private void Update()
         {
-            if (!IsOwner)
+            if (!IsOwner || _cameraTransform == null)
             {
                 return;
             }
-            
+
             CheckGroundStatus();
             
             _horizontal = PlayerInputs.GetHorizontal();
@@ -350,7 +395,7 @@ namespace PlatformCharacterController
 
         private void FixedUpdate()
         {
-            if (!IsOwner)
+            if (!IsOwner || _cameraTransform == null)
             {
                 return;
             }
