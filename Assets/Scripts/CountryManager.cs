@@ -25,6 +25,7 @@ public class CountryManager : NetworkBehaviour
 
     private void Awake()
     {
+        ReferenceManager.Register(this);
         gameManager = ReferenceManager.Get<GameManager>();
         _networkEvents = ReferenceManager.Get<NetworkEvents>();
         _networkData = ReferenceManager.Get<NetworkData>();
@@ -144,6 +145,11 @@ public class CountryManager : NetworkBehaviour
         insSector.Initialize(sectorThemeList, sectorBlockList, sectorData);
 
         return insSector;
+    }
+
+    private void OnDestroy()
+    {
+        ReferenceManager.Unregister(this);
     }
 }
 

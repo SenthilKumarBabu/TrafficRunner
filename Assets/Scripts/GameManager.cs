@@ -36,6 +36,12 @@ public class GameManager : MonoBehaviour
     private void Awake()
     {
         DontDestroyOnLoad(gameObject);
+        ReferenceManager.Register(this);
+    }
+
+    private void OnDestroy()
+    {
+        ReferenceManager.Unregister(this);
     }
 
     private void Start()
@@ -94,6 +100,17 @@ public class GameManager : MonoBehaviour
 
     public bool CheckAllPlayersCompleteRace()
     {
+        if (_networkData == null)
+            _networkData = ReferenceManager.Get<NetworkData>();
+        if (_networkData == null) return false;
+
+        if (_networkData.playersDataList.Count != TotalNumberOfPlayers)
+            return false;
+
+        for (int i = 0; i < _networkData.playersDataList.Count; i++)
+            if (_networkData.playersDataList[i].raceCompleteTime.IsEmpty)
+                return false;
+
         return true;
     }
     

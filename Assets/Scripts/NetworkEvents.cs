@@ -1,13 +1,8 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Globalization;
 using Cysharp.Threading.Tasks;
 using QFSW.QC;
 using Unity.Netcode;
-using Unity.Services.Analytics;
 using UnityEngine;
-using UnityEngine.Analytics;
 
 public class NetworkEvents : NetworkBehaviour
 {
@@ -18,109 +13,23 @@ public class NetworkEvents : NetworkBehaviour
     public event EventHandler LocalPlayerCompleteRace;
     public event EventHandler AllPlayersCompleteRace;
 
-    [SerializeField] private bool networkManagerEventsLogs;
-    [SerializeField] private  bool inGameEventsLogs;
-    
     private GameManager _gameManager;
-    private NetworkRpc _networkRpc;
-    private NetworkData _networkData;
 
     private void Awake()
     {
+        ReferenceManager.Register(this);
         _gameManager = ReferenceManager.Get<GameManager>();
-        _networkRpc = ReferenceManager.Get<NetworkRpc>();
-        _networkData = ReferenceManager.Get<NetworkData>();
-
-        if (inGameEventsLogs)
-        {
-            OnPlayerSpawned += delegate
-            {
-                AnalyticsService.Instance.RecordEvent("OnPlayerSpawned");
-                Debug.Log($"Events: OnPlayerSpawned by {NetworkManager.Singleton.LocalClientId} at {DateTime.Now.ToString("HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
-            };
-            OnGameStarted += delegate
-            {
-                AnalyticsService.Instance.RecordEvent("OnGameStarted");
-                Debug.Log($"Events: OnGameStarted by {NetworkManager.Singleton.LocalClientId} at {DateTime.Now.ToString("HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
-            };
-            OnSceneDataInitialized += delegate
-            {
-                AnalyticsService.Instance.RecordEvent("OnSetupScene");
-                Debug.Log($"Events: OnSetupScene by {NetworkManager.Singleton.LocalClientId} at {DateTime.Now.ToString("HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
-            };
-            OnRaceStarted += delegate
-            {
-                AnalyticsService.Instance.RecordEvent("OnRaceStarted");
-                Debug.Log($"Events: OnRaceStarted by {NetworkManager.Singleton.LocalClientId} at {DateTime.Now.ToString("HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
-            };
-            LocalPlayerCompleteRace += delegate
-            {
-                AnalyticsService.Instance.RecordEvent("LocalPlayerCompleteRace");
-                Debug.Log($"Events: LocalPlayerCompleteRace by {NetworkManager.Singleton.LocalClientId} at {DateTime.Now.ToString("HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
-            };
-            AllPlayersCompleteRace += delegate
-            {
-                AnalyticsService.Instance.RecordEvent("AllPlayersCompleteRace");
-                Debug.Log($"Events: AllPlayersCompleteRace by {NetworkManager.Singleton.LocalClientId} at {DateTime.Now.ToString("HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
-            };
-        }
     }
 
-    public override void OnNetworkSpawn()
+    private void OnDestroy()
     {
-        if (networkManagerEventsLogs)
-        {
-            NetworkManager.Singleton.OnClientConnectedCallback += delegate(ulong clientIndex)
-            {
-                Debug.Log($"Events: OnClientConnected {clientIndex} by {NetworkManager.Singleton.LocalClientId} at {DateTime.Now.ToString("HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
-            };
-
-            NetworkManager.Singleton.OnConnectionEvent += (manager, data) =>
-            {
-                Debug.Log($"Events: OnConnectionEvent {data.ClientId} {data.EventType} at {DateTime.Now.ToString("HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
-            };
-        
-            NetworkManager.Singleton.OnServerStarted += delegate
-            {
-                Debug.Log($"Events: OnServerStarted by {NetworkManager.Singleton.LocalClientId} at {DateTime.Now.ToString("HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
-            };
-        
-            NetworkManager.Singleton.OnServerStopped += delegate
-            {
-                Debug.Log($"Events: OnServerStopped by {NetworkManager.Singleton.LocalClientId} at {DateTime.Now.ToString("HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
-            };
-        
-            NetworkManager.Singleton.OnClientStarted += delegate
-            {
-                Debug.Log($"Events: OnClientStarted by {NetworkManager.Singleton.LocalClientId} at {DateTime.Now.ToString("HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
-            };
-            
-            NetworkManager.Singleton.OnClientStopped += delegate
-            {
-                Debug.Log($"Events: OnClientStopped by {NetworkManager.Singleton.LocalClientId} at {DateTime.Now.ToString("HH:mm:ss.fff", CultureInfo.InvariantCulture)}");
-            };
-        }
-
-        if (IsHost)
-        {
-            NetworkManager.Singleton.OnConnectionEvent += delegate(NetworkManager manager, ConnectionEventData data)
-            {
-                Debug.Log($"[NetworkEvents] OnConnectionEvent: client {data.ClientId} {data.EventType}");
-                _networkRpc.SetPlayerDataServerRpc(new PlayerData()
-                {
-                    id = data.ClientId,
-                    isConnected = true,
-                    isReadyForGame = _networkData.GetLocalPlayerReadyStatus(),
-                    raceCompleteTime = _networkData.GetLocalPlayerRaceEndTime()
-                });
-            };
-        }
+        ReferenceManager.Unregister(this);
     }
 
     public void SceneSetup()
     {
         Debug.Log($"[NetworkEvents] SceneSetup called by client {NetworkManager.Singleton.LocalClientId}");
-        OnSceneDataInitialized?.Invoke(this,EventArgs.Empty);
+        OnSceneDataInitialized?.Invoke(this, EventArgs.Empty);
     }
 
     public async void StartRace()
@@ -151,9 +60,9 @@ public class NetworkEvents : NetworkBehaviour
         Debug.Log($"[NetworkEvents] OnAllPlayersCompleteRace for client {NetworkManager.Singleton.LocalClientId}");
         AllPlayersCompleteRace?.Invoke(this, EventArgs.Empty);
     }
-    
+
     [Command("Disconnect")]
-    void Disconnect()
+    private void Disconnect()
     {
         NetworkManager.Singleton.Shutdown();
     }

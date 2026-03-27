@@ -39,7 +39,7 @@ public struct BlockObject
     {
         this.vehicleList = vehicleList;
         this.obstacleList = obstacleList;
-        this.platformList = vehicleList;
+        this.platformList = platformList;
         this.rampList = rampList;
         this.powerUpList = powerUpList;
         this.checkpointList = checkpointList;

@@ -13,6 +13,7 @@ public class CameraManager : MonoBehaviour
 
     private void Awake()
     {
+        ReferenceManager.Register(this);
         _networkEvents = ReferenceManager.Get<NetworkEvents>();
 
         _networkEvents.OnGameStarted += async delegate
@@ -21,6 +22,11 @@ public class CameraManager : MonoBehaviour
             await UniTask.WaitUntil(() => (UnityEngine.Object)PlayerManager.LocalPlayerInstance != null);
             gameCamera.GetComponent<TopDownCamera>().Target = PlayerManager.LocalPlayerInstance.transform;
         };
+    }
+
+    private void OnDestroy()
+    {
+        ReferenceManager.Unregister(this);
     }
 
     public Camera GetMainCamera()

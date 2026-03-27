@@ -15,10 +15,16 @@ public class NetworkRpc : NetworkBehaviour
 
     private void Awake()
     {
+        ReferenceManager.Register(this);
         _gameManager = ReferenceManager.Get<GameManager>();
         _networkEvents = ReferenceManager.Get<NetworkEvents>();
         _networkData = ReferenceManager.Get<NetworkData>();
         _countryManager = ReferenceManager.Get<CountryManager>();
+    }
+
+    private void OnDestroy()
+    {
+        ReferenceManager.Unregister(this);
     }
 
     [ServerRpc(RequireOwnership = false)]

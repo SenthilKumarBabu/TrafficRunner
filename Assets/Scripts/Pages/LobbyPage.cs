@@ -22,6 +22,7 @@ public class LobbyPage : MonoBehaviour
 
    private void Awake()
    {
+      ReferenceManager.Register(this);
       lobbyManager = ReferenceManager.Get<LobbyManager>();
       _unityTransport = ReferenceManager.Get<UnityTransport>();
 
@@ -89,5 +90,10 @@ public class LobbyPage : MonoBehaviour
    private void Hide()
    {
       holder.SetActive(false);
+   }
+
+   private void OnDestroy()
+   {
+      ReferenceManager.Unregister(this);
    }
 }

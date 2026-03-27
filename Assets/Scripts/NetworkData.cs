@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using NaughtyAttributes;
 using QFSW.QC;
 using Unity.Collections;
@@ -22,6 +23,7 @@ public class NetworkData : NetworkBehaviour
 
     private void Awake()
     {
+        ReferenceManager.Register(this);
         _networkEvents = ReferenceManager.Get<NetworkEvents>();
         _gameManager = ReferenceManager.Get<GameManager>();
         _networkRpc = ReferenceManager.Get<NetworkRpc>();
@@ -32,6 +34,7 @@ public class NetworkData : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         Debug.Log($"[NetworkData] OnNetworkSpawn — IsServer={IsServer}, instanceId={GetInstanceID()}");
+        playersDataList.OnListChanged += OnPlayersDataListChanged;
 
         if (IsServer)
         {
@@ -63,7 +66,8 @@ public class NetworkData : NetworkBehaviour
             if (!isSceneSetupCompleted && CheckAllPlayersConnected())
             {
                 isSceneSetupCompleted = true;
-                _networkEvents.SceneSetup();
+                Debug.Log("[NetworkData] All players connected — deferring SceneSetup to next frame so all NetworkObjects finish OnNetworkSpawn first");
+                DeferSceneSetup().Forget();
             }
 
             // Handle clients that connect after this point
@@ -84,9 +88,40 @@ public class NetworkData : NetworkBehaviour
         }
     }
 
+    private async UniTaskVoid DeferSceneSetup()
+    {
+        await UniTask.NextFrame();
+        Debug.Log("[NetworkData] DeferSceneSetup — calling SceneSetup now (all NetworkObjects spawned)");
+        _networkEvents.SceneSetup();
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        playersDataList.OnListChanged -= OnPlayersDataListChanged;
+    }
+
     public override void OnDestroy()
     {
+        ReferenceManager.Unregister(this);
         playersDataList?.Dispose();
+    }
+
+    private void OnPlayersDataListChanged(NetworkListEvent<PlayerData> changeEvent)
+    {
+        if (changeEvent.Value.raceCompleteTime.IsEmpty) return;
+        if (AllPlayersFinished())
+        {
+            Debug.Log("[NetworkData] All players finished — firing AllPlayersCompleteRace");
+            _networkEvents.OnAllPlayersCompleteRace();
+        }
+    }
+
+    private bool AllPlayersFinished()
+    {
+        if (playersDataList.Count != _gameManager.TotalNumberOfPlayers) return false;
+        for (int i = 0; i < playersDataList.Count; i++)
+            if (playersDataList[i].raceCompleteTime.IsEmpty) return false;
+        return true;
     }
 
     [Command]

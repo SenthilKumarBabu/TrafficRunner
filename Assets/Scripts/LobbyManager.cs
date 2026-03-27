@@ -65,7 +65,11 @@ public class LobbyManager : MonoBehaviour
     private Lobby joinedLobby;
     private string playerName;
     private string playerId;
-    
+    private bool _isPolling;
+    private bool _isHeartbeating;
+
+    [SerializeField] private SoGameConfig _gameConfig;
+
     private GameManager gameManager;
     private NetworkEvents _networkEvents;
     private NetworkRpc _networkRpc;
@@ -76,12 +80,18 @@ public class LobbyManager : MonoBehaviour
     {
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        ReferenceManager.Register(this);
 
         gameManager = ReferenceManager.Get<GameManager>();
 
         UpdatePlayerName($"User{UnityEngine.Random.Range(0, 1000)}");
 
         OnJoinedLobby += delegate { PrintLobby(); };
+    }
+
+    private void OnDestroy()
+    {
+        ReferenceManager.Unregister(this);
     }
 
     private void Update()
@@ -108,54 +118,58 @@ public class LobbyManager : MonoBehaviour
 
     private async void HandleLobbyHeartbeat()
     {
-        if (IsLobbyHost())
-        {
-            heartbeatTimer -= Time.deltaTime;
-            if (heartbeatTimer < 0f)
-            {
-                float heartbeatTimerMax = 15f;
-                heartbeatTimer = heartbeatTimerMax;
+        if (_isHeartbeating || !IsLobbyHost()) return;
+        heartbeatTimer -= Time.deltaTime;
+        if (heartbeatTimer >= 0f) return;
 
-                Debug.Log("Heartbeat");
-                await LobbyService.Instance.SendHeartbeatPingAsync(joinedLobby.Id);
-            }
+        float heartbeatInterval = _gameConfig != null ? _gameConfig.lobbyHeartbeatInterval : 15f;
+        heartbeatTimer = heartbeatInterval;
+        _isHeartbeating = true;
+        try
+        {
+            Debug.Log("Heartbeat");
+            await LobbyService.Instance.SendHeartbeatPingAsync(joinedLobby.Id);
+        }
+        finally
+        {
+            _isHeartbeating = false;
         }
     }
 
     private async void HandleLobbyPolling()
     {
-        if (joinedLobby != null)
+        if (joinedLobby == null || _isPolling) return;
+        lobbyPollTimer -= Time.deltaTime;
+        if (lobbyPollTimer >= 0f) return;
+
+        float pollInterval = _gameConfig != null ? _gameConfig.lobbyPollInterval : 1.1f;
+        lobbyPollTimer = pollInterval;
+        _isPolling = true;
+        try
         {
-            lobbyPollTimer -= Time.deltaTime;
-            if (lobbyPollTimer < 0f)
+            joinedLobby = await LobbyService.Instance.GetLobbyAsync(joinedLobby.Id);
+
+            OnJoinedLobbyUpdate?.Invoke(this, new LobbyEventArgs { lobby = joinedLobby });
+
+            if (!IsPlayerInLobby())
             {
-                float lobbyPollTimerMax = 1.1f;
-                lobbyPollTimer = lobbyPollTimerMax;
-
-                joinedLobby = await LobbyService.Instance.GetLobbyAsync(joinedLobby.Id);
-
-                OnJoinedLobbyUpdate?.Invoke(this, new LobbyEventArgs { lobby = joinedLobby });
-
-                if (!IsPlayerInLobby())
-                {
-                    // Player was kicked out of this lobby
-                    Debug.Log("Kicked from Lobby!");
-
-                    OnKickedFromLobby?.Invoke(this, new LobbyEventArgs { lobby = joinedLobby });
-
-                    joinedLobby = null;
-                }
-
-                if (joinedLobby.Data[KEY_START_GAME].Value != "0")
-                {
-                    if (!IsLobbyHost())
-                    {
-                        JoinRelay(joinedLobby.Data[KEY_START_GAME].Value);
-                    }
-
-                    joinedLobby = null;
-                }
+                Debug.Log("Kicked from Lobby!");
+                OnKickedFromLobby?.Invoke(this, new LobbyEventArgs { lobby = joinedLobby });
+                joinedLobby = null;
+                return;
             }
+
+            if (joinedLobby.Data[KEY_START_GAME].Value != "0")
+            {
+                if (!IsLobbyHost())
+                    JoinRelay(joinedLobby.Data[KEY_START_GAME].Value);
+
+                joinedLobby = null;
+            }
+        }
+        finally
+        {
+            _isPolling = false;
         }
     }
 

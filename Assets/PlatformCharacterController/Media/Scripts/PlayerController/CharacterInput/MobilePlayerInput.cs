@@ -1,23 +1,66 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using TopDownShooter;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.EnhancedTouch;
+using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
+using UIJoystick = TopDownShooter.Joystick;
 
 namespace PlatformCharacterController
 {
     public class MobilePlayerInput : Inputs
     {
-        [HideInInspector] public Joystick MobileJoystick;
+        [HideInInspector] public UIJoystick MobileJoystick;
         [HideInInspector] public MovementCharacterController MovementCharacterController;
         [HideInInspector] public HoldObjects HoldObjectsController;
+
+        [SerializeField] private SoGameConfig gameConfig;
+        private float SwipeThreshold => gameConfig != null ? gameConfig.swipeThreshold : 50f;
+
         private bool _jetPack;
         private bool _parachute;
+        private bool _jumpThisFrame;
+        private bool _dashThisFrame;
 
-        public override void OnNetworkSpawn()
+        private void Awake()
         {
-            MobileJoystick = FindObjectOfType<Joystick>(true);
+            MobileJoystick = FindObjectOfType<UIJoystick>(true);
             MovementCharacterController = GetComponent<MovementCharacterController>();
             HoldObjectsController = GetComponent<HoldObjects>();
+        }
+
+        private void OnEnable()
+        {
+            EnhancedTouchSupport.Enable();
+            Touch.onFingerUp += OnFingerUp;
+        }
+
+        private void OnDisable()
+        {
+            Touch.onFingerUp -= OnFingerUp;
+            EnhancedTouchSupport.Disable();
+        }
+
+        private void OnFingerUp(Finger finger)
+        {
+            var touch = finger.currentTouch;
+            Vector2 delta = touch.screenPosition - finger.screenPosition;
+
+            if (delta.magnitude < SwipeThreshold) return;
+
+            if (Mathf.Abs(delta.y) > Mathf.Abs(delta.x))
+            {
+                if (delta.y > 0) _jumpThisFrame = true;
+                else _parachute = !_parachute;
+            }
+            else
+            {
+                _dashThisFrame = true;
+            }
+        }
+
+        private void LateUpdate()
+        {
+            _jumpThisFrame = false;
+            _dashThisFrame = false;
         }
 
         public override float GetHorizontal()
@@ -32,12 +75,12 @@ namespace PlatformCharacterController
 
         public override bool Jump()
         {
-            return false;
+            return _jumpThisFrame;
         }
 
         public override bool Dash()
         {
-            return false;
+            return _dashThisFrame;
         }
 
         public override bool JetPack()
@@ -55,11 +98,7 @@ namespace PlatformCharacterController
             return false;
         }
 
-        public void DropOrCarryOnButton()
-        {
-            HoldObjectsController.DropOrCarryItem();
-        }
-
+        // Called by UI buttons
         public void MakeJump()
         {
             MovementCharacterController.Jump(MovementCharacterController.JumpHeight);
@@ -68,6 +107,11 @@ namespace PlatformCharacterController
         public void MakeDash()
         {
             MovementCharacterController.Dash();
+        }
+
+        public void DropOrCarryOnButton()
+        {
+            HoldObjectsController.DropOrCarryItem();
         }
 
         public void ActiveJetPack(bool active)
@@ -79,6 +123,5 @@ namespace PlatformCharacterController
         {
             _parachute = active;
         }
-
     }
 }
